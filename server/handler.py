@@ -1,7 +1,4 @@
-import threading
 import csv, os, shutil
-import socket
-
 
 '''
     Database organization structure
@@ -71,7 +68,7 @@ def write_item(item_info):
 def get_item_handler(item_info):
     item_info = read_item(item_info['id'])
     if item_info['id']:
-        print(item_info)
+        return item_info
     else:
         return "Non-existent"
 
@@ -123,6 +120,23 @@ def check_item_info(item_info):
     
     return True
 
+def output_message(mess):
+    
+    if(isinstance(mess, dict)):
+        temp = ""
+        for key in mess:
+            if(isinstance(mess[key],str)):
+                temp += key + " " + mess[key] + '\n'
+        if "photo" in mess:
+            temp += 'photo' + ' ' + '...' + '\n'
+            return temp , mess["photo"]
+        else:
+            return temp, None
+    elif (isinstance(mess, str)):
+        return mess, None
+    else:
+        return "", None
+
 # The entry function (for threads) to process client requests
 def handler(instr, item_info):
     mess = ''
@@ -131,7 +145,7 @@ def handler(instr, item_info):
         mess =  "Invalid values"
     else:
         mess  = HANDLER_FUNC_DICT[instr](item_info)
-    print("mess: ", mess)
+    return output_message(mess)
 
 HANDLER_FUNC_DICT = {
 
@@ -141,14 +155,14 @@ HANDLER_FUNC_DICT = {
     'update': update_item_handler,
 }
 
-item_info = {
-        'id' : "00005",
-        'name': "Sandy",
-        'val_photo': '1'
-}
+# item_info = {
+#         'id' : "00005",
+#         'name': "Sandy",
+#         'val_photo': '1'
+# }
 
-with open("xxx.jpg", 'rb') as f:
-    reader = f.read()
-    item_info['photo'] = reader
+# with open("xxx.jpg", 'rb') as f:
+#     reader = f.read()
+#     item_info['photo'] = reader
 
-handler("get", item_info)
+# handler("get", item_info)

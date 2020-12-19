@@ -1,3 +1,5 @@
 .idea/
 venv/
+clinet/__pycache__/
+server/__pycache__/
 cheatsheet.png
