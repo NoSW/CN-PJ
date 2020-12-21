@@ -13,7 +13,7 @@ import csv, os, shutil
                 |- 00002.csv 
             .
             .
-                .
+            .
 '''
 
 DATA_DIR = ".\\data\\student\\"
@@ -68,9 +68,10 @@ def write_item(item_info):
 def get_item_handler(item_info):
     item_info = read_item(item_info['id'])
     if item_info['id']:
-        return item_info
+        return None, item_info
     else:
-        return "Non-existent"
+        return "Non-existent", None
+
 
 # Delete an item floder
 def delete_item_handler(item_info):
@@ -78,7 +79,8 @@ def delete_item_handler(item_info):
     if os.path.exists(item_path):
         shutil.rmtree(item_path)
     else:
-        return "Non-existent"
+        return "Non-existent", None
+    return None, None
 
 # Add a new item by `write_item()`
 def add_item_handler(item_info):
@@ -88,13 +90,14 @@ def add_item_handler(item_info):
         os.mkdir(item_path)
         write_item(item_info)
     else:
-        return "Already exists"
+        return "Already exists", None
+    return None, None
 
 # Update an item by `write_item()`
 def update_item_handler(item_info):
     item_path = DATA_DIR + item_info['id'] + "\\"
     if not os.path.exists(item_path):
-        return "Non-existent"
+        return "Non-existent", None
 
     item_dict = read_item(item_info['id'])
 
@@ -102,6 +105,7 @@ def update_item_handler(item_info):
         if item_info[key] != DEFAULT_ITEM[key]:
             item_dict[key] = item_info[key]
     write_item(item_dict)
+    return None, None
 
 # Check to see if `item_info` is valid 
 def check_item_info(item_info):
@@ -110,6 +114,9 @@ def check_item_info(item_info):
         if key not in item_info:
             item_info[key] = DEFAULT_ITEM[key]
     
+    if len(item_info["id"]) == 0:
+        return False
+
     if len(item_info) != len(DEFAULT_ITEM) or \
         item_info['id'] == None:
         return False
@@ -120,32 +127,15 @@ def check_item_info(item_info):
     
     return True
 
-def output_message(mess):
-    
-    if(isinstance(mess, dict)):
-        temp = ""
-        for key in mess:
-            if(isinstance(mess[key],str)):
-                temp += key + " " + mess[key] + '\n'
-        if "photo" in mess:
-            temp += 'photo' + ' ' + '...' + '\n'
-            return temp , mess["photo"]
-        else:
-            return temp, None
-    elif (isinstance(mess, str)):
-        return mess, None
-    else:
-        return "", None
-
 # The entry function (for threads) to process client requests
 def handler(instr, item_info):
     mess = ''
     if not check_item_info(item_info) or \
         instr not in HANDLER_FUNC_DICT:
-        mess =  "Invalid values"
+        error, mess =  "Invalid values", None
     else:
-        mess  = HANDLER_FUNC_DICT[instr](item_info)
-    return output_message(mess)
+        error, mess  = HANDLER_FUNC_DICT[instr](item_info)
+    return error, mess
 
 HANDLER_FUNC_DICT = {
 

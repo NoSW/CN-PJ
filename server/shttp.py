@@ -7,7 +7,7 @@ import socket
 
 
 MAXSIZE_BUFF = 1024*1024
-MAX_LATENCY = 500000
+
 DEFAULT_ENCODING = "utf-8"
 STATUS_CODE = [200, 301, 400, 401, 404, 505]
 SUPPORTED_VERSION = ["1.0"]
@@ -25,8 +25,13 @@ STATUS_CODE_DICT = {
     "Moved Permanently": 301,
     "Bad Request": 400,
     "Unauthorized": 401,
-    "NotFound": 404,
-    "NotSupported": 505,
+    "Not Found": 404,
+    "Not Supported": 505,
+}
+ERROR_DICT = {
+    "Non-existent": 404,
+    "Already exists": 400,
+    "Invalid values": 400,
 }
 '''
 shttp.py (simlar-http) contains the following functions:
@@ -37,19 +42,19 @@ shttp.py (simlar-http) contains the following functions:
 The format of my like-http is as follows:
 
 2. Response message
-    __________________________________________        ---+
-    |    [version]   |SPACE|[status code]|CRLF|          | Status line
-    |________________|_____|_____________|____|       ---+
-    |       host          |SPACE|[value]|CRLF |          |
-    |_____________________|_____|_______|___ _|          |
-    |       Date          |SPACE|[value]|                | Header line
-    |_____________________|_____|_______|                | 
-    |   Content-Length    |SPACE|[VALUE]|                |
-    |_____________________|_____|_______|              ---+
-    |CRLF|                                               | Blank line
-    |____|___________________________________         ---+
-    |               Entity body              |           | request data
-    |________________________________________|        ---+
+    __________________________________________      ---+                    ----+
+    |    [version]   |SPACE|[status code]|CRLF|        | Status line            |
+    |________________|_____|_____________|____|     ---+                        |
+    |       host          |SPACE|[value]|CRLF |        |                        |
+    |_____________________|_____|_______|___ _|        |                        |
+    |       Date          |SPACE|[value]|              | Header line            |
+    |_____________________|_____|_______|              |                        | 100 Bytes (fixed)
+    |   Content-Length    |SPACE|[VALUE]|              |                        |
+    |_____________________|_____|_______|           ---+                        |
+    |SPACE| CRLF|                                      | Blank line             |
+    |____ |_____|_____________________________      ---+                    ----+
+    |               Entity body              |         | request data
+    |________________________________________|      ---+
 
     - status code
         - 200 OK                Request succeeded and the information is returned in the response
@@ -61,14 +66,30 @@ The format of my like-http is as follows:
 
 '''
 
-def response_message(version="1.0", status_code=200, host="127.0.0.1", content=""):
+def response_message(version="1.0", status_code=200, host="127.0.0.1", item_info=None):
+    content_length, content = content_message(item_info)
+    header = header_messsage(version, status_code, host, content_length)
+    return  header + content
+
+def header_messsage(version, status_code, host, Content_Length):
     date = str(datetime.datetime.now())
     head = "{0} {1}\nHost {2}\nDate {3}\nContent-Length {4}\n".format(
-        version, status_code, host, date, len(content))
+        version, status_code, host, date, Content_Length)
     head += (HEAD_LENGTH - 1 - len(head)) * ' ' + '\n'
-    mess = head + content
-    return mess
+    return head.encode(DEFAULT_ENCODING)
 
+def content_message(item_info):
+    if item_info == None:
+        return 0, b''
+    content = ""
+    binary_data = b''
+    for key in item_info.keys():
+        if key != "photo":
+            content += key + ' ' + item_info[key] + '\n'
+        else:
+            binary_data = item_info["photo"]
+
+    return len(content), content.encode(DEFAULT_ENCODING) + binary_data
 
 def check_header(head_dict):
     status_code = 200
@@ -79,7 +100,6 @@ def check_header(head_dict):
     return status_code
 
 def request_parsing(mess):
-    print("parsing...")
 
     head = bytes.decode(mess[:HEAD_LENGTH])
     head_dict = {}
@@ -89,7 +109,6 @@ def request_parsing(mess):
     for line in head_lines[1:-2]:
         key, value = line.split(' ', 1)
         head_dict[key] = value
-    print(head_dict)
 
     status_code = check_header(head_dict)
 
@@ -98,13 +117,15 @@ def request_parsing(mess):
 
 
 def content_parsing(content, decode_len):
+    if len(content) == 0:
+        return {}
     head = bytes.decode(content[:decode_len])
     item_info = {}
     items = head.split('\n')
     for item in items[:-1]:
         key, value = item.split(' ', 1)
         item_info[key] = value
-    if "photo" in item_info:
+    if "val_photo" in item_info and item_info["val_photo"] == "1":
         item_info["photo"] = content[decode_len:]
 
     return item_info
