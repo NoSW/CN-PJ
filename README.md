@@ -47,10 +47,9 @@
     - thread.py                 # 定义一个线程池
     - main.py
 - client                        # 客户端运行目录  
-    - handler.py                # 发出各种请求
+    - handler.py                # 处理各种请求（接、发数据包）
     - shttp.py                  # 构造、解析shttp
-    - ui.py                     # 为了(10%)bonus而生 Orz
-    - main.py       
+    - main.py                   # GUI界面
 ```
 
 ## **功能实现**
@@ -127,4 +126,19 @@ The format of my like-http is as follows:
 
 ### **客户端请求**
 
+请求类型，见图形界面。  
+复用服务端的`shttp.py`、实现图形界面的`main.py`、与服务端交互的`handler.py`
+
 ### **图形界面**
+
+按钮：
+
+1. 选择操作类型
+   1. get a student's information
+   2. add a new student
+   3. delete a student
+   4. update a student\'s infomation
+2. 输入id
+3. 输入name
+4. 上传照片 (upload)
+5. 运行 (run)
