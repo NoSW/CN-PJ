@@ -142,3 +142,7 @@ The format of my like-http is as follows:
 3. 输入name
 4. 上传照片 (upload)
 5. 运行 (run)
+
+截图：
+
+![image](img/gui.gif)
